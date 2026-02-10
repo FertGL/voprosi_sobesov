@@ -1,6 +1,6 @@
 package Multitrading;
 
-public class Java_memety_model_hapends_before {
+public class Java_memory_model_happens_before {
     /*
     Java Memory Model(JMM) - описывает поведение потоков в среде исполнения Java
 
