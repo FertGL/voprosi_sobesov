@@ -40,5 +40,9 @@ public class HashMap {
 
      HashMap позволяет иметь сколько угодно value = null
      И только 1 key = null.(hashcode у такого ключа = 0)
+
+     — Контракт между equals и hashcode
+     Если два обьекта равны по equals, то и hashcode должен быть одинаковый.
+     Если два обьекта равны по hashcode, то по equals не факт что равны.
      */
 }
