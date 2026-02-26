@@ -1,4 +1,4 @@
-package Kafka;
+package Patterns.MS_Patterns;
 
 public class Outbox {
     /*
