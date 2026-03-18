@@ -1,4 +1,4 @@
-package Multitrading;
+package Multitrading.concurrentUtils;
 
 public class concurrentUtil {
     /*

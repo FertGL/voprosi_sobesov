@@ -1,4 +1,4 @@
-package Multitrading.Collections;
+package Multitrading.concurrentUtils.Collections;
 
 public class Collections {
     /*
