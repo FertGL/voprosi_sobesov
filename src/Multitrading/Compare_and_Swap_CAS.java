@@ -1,6 +1,6 @@
 package Multitrading;
 
-public class Compare_and_Swap {
+public class Compare_and_Swap_CAS {
     /*
     CAS - атомарная операция, используемая в многопоточном программировании
     для реализации безблокировочных алгоритмов.
