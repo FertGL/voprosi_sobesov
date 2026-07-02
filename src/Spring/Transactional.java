@@ -92,5 +92,117 @@ public class Transactional {
 
     noRollbackFor = {EntityExistsException.class} — даже если произойдет это исключение,
     транзакция всё равно закоммитится (если не было других ошибок).
+
+    Когда вы вызываете @Transactional метод из другого метода того же класса (не транзакционного),
+    транзакция действительно НЕ создается. Это происходит из-за того, как Spring реализует проксирование.
+
+    Механизм работы:
+    -Spring создает прокси-объект (динамический прокси или CGLIB) для вашего бина.
+    -Этот прокси-оборачивает ваш бин и перехватывает вызовы методов.
+    -Логика транзакций (@Transactional) находится именно в прокси, а не в самом бине.
+    -Когда вы вызываете метод извне (через прокси) — транзакция запускается.
+    -Когда вы вызываете метод внутри класса (this.method()) — вызов идет напрямую к реальному объекту,
+    минуя прокси. Поэтому аннотация @Transactional игнорируется.
+
+    Способ 1. Внедрить сам себя (Self-Injection) — САМЫЙ ПРОСТОЙ И РЕКОМЕНДУЕМЫЙ
+
+    @Service
+    public class UserService {
+
+        @Autowired
+        private UserRepository userRepository;
+
+        // Внедряем самого себя (прокси)
+        @Autowired
+        private UserService self;
+
+        public void nonTransactionalMethod() {
+            // Вызываем через прокси
+            self.transactionalMethod();
+        }
+
+        @Transactional
+        public void transactionalMethod() {
+            //код
+        }
+    }
+
+    Способ 2. Использовать AopContext.currentProxy()
+
+    @Service
+    @EnableAspectJAutoProxy(exposeProxy = true) // Включить exposeProxy
+    public class UserService {
+
+        @Autowired
+        private UserRepository userRepository;
+
+        public void nonTransactionalMethod() {
+            // Получаем прокси через AopContext
+            ((UserService) AopContext.currentProxy()).transactionalMethod();
+        }
+
+        @Transactional
+        public void transactionalMethod() {
+            userRepository.save(new User("John"));
+        }
+    }
+
+    Способ 3. Вынести транзакционный метод в отдельный сервис
+
+    @Service
+    public class UserService {
+
+        @Autowired
+        private TransactionalUserService transactionalUserService;
+
+        public void nonTransactionalMethod() {
+            // Вызов через отдельный бин с транзакцией
+            transactionalUserService.transactionalMethod();
+        }
+    }
+
+    @Service
+    public class TransactionalUserService {
+
+        @Autowired
+        private UserRepository userRepository;
+
+        @Transactional
+        public void transactionalMethod() {
+            userRepository.save(new User("John"));
+        }
+    }
+
+    Способ 4. Использовать TransactionTemplate (программное управление)
+
+    @Service
+    public class UserService {
+
+        @Autowired
+        private TransactionTemplate transactionTemplate;
+
+        @Autowired
+        private UserRepository userRepository;
+
+        public void nonTransactionalMethod() {
+            transactionTemplate.execute(status -> {
+                // Весь код здесь выполнится в транзакции
+                userRepository.save(new User("John"));
+                return null;
+            });
+        }
+    }
+
+
+    Способ	                Плюсы	                            Минусы
+    Self-Injection	Простой, декларативный,     стандартный	Немного неинтуитивно (внедрение самого себя)
+    AopContext	    Работает без лишних бинов	    Требует настройки exposeProxy, "грязный" хак
+    Отдельный сервис	Чистая архитектура,
+                         легко тестировать                      Создание лишних классов
+    TransactionTemplate	Полный контроль,            без прокси	Программный код, больше бойлерплейта
+
+    Для большинства случаев используйте Self-Injection (Способ 1) — он прост, понятен и не требует
+    лишних настроек. Если архитектура позволяет — выносите в отдельный сервис (Способ 3), это
+    правильнее с точки зрения SRP (Single Responsibility Principle).
      */
 }
